@@ -1,0 +1,17 @@
+{
+  "name": "statusline",
+  "version": "1.0.0",
+  "description": "Claude Code statusline for tmux/terminal: shows context window usage, session cost, and account quota.",
+  "author": {
+    "name": "jojo-dan"
+  },
+  "repository": "https://github.com/jojo-dan/jojo-public-plugins",
+  "license": "MIT",
+  "keywords": [
+    "statusline",
+    "tmux",
+    "hud",
+    "context-window",
+    "usage"
+  ]
+}
