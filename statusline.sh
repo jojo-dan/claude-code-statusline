@@ -1,4 +1,7 @@
 #!/bin/bash
+# NOTE: fastMode is read from settings.json because Claude Code's statusline
+# stdin JSON does not expose fast mode state (anthropics/claude-code#24279).
+# This reflects the user's setting, which matches actual state on native binary.
 FAST_MODE=$(jq -r '.fastMode // false' ~/.claude/settings.json 2>/dev/null)
 EFFORT_LEVEL=$(jq -r '.effortLevel // "high"' ~/.claude/settings.json 2>/dev/null)
 

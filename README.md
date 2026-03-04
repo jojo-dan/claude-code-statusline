@@ -99,6 +99,8 @@ After installation, Claude Code automatically calls `statusline.sh` at the start
 | `fastMode` | `true` / `false` | Shows `↯fast` indicator when true |
 | `effortLevel` | `"low"` / `"medium"` / `"high"` | Shows `⚡lo`, `⚡md`, or `⚡hi` |
 
+> **Note:** `fastMode` and `effortLevel` are read from `settings.json` because Claude Code's statusline stdin JSON does not expose these fields ([anthropics/claude-code#24279](https://github.com/anthropics/claude-code/issues/24279)). This means the indicator reflects the **user setting**, not a runtime-confirmed state. On the native Claude Code binary, the setting and actual state are consistent, so the indicator is accurate in practice.
+
 No other configuration is required.
 
 ---
