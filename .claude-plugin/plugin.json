@@ -5,7 +5,7 @@
   "author": {
     "name": "jojo-dan"
   },
-  "repository": "https://github.com/jojo-dan/jojo-public-plugins",
+  "repository": "https://github.com/jojo-dan/claude-code-statusline",
   "license": "MIT",
   "keywords": [
     "statusline",
