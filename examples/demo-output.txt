@@ -1,0 +1,66 @@
+claude-code-statusline — sample output
+======================================
+
+Each time Claude Code renders the status area, statusline.sh is called with a
+JSON payload describing the current session. Below are two representative
+examples showing what the output looks like in a terminal.
+
+──────────────────────────────────────────────────────────
+Example 1: Low context usage, no quota data (unauthenticated)
+──────────────────────────────────────────────────────────
+
+📂 ~/dev/my-project  sonnet4.6 ⚡hi  200k  🔀 main
+CTX ▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱  20%  20k/200k
+
+Fields on line 1:
+  📂 ~/dev/my-project   — working directory (home replaced with ~)
+  sonnet4.6             — active model (short name)
+  ⚡hi                  — effort level (lo / md / hi)
+  200k                  — context window size
+  🔀 main               — current git branch
+
+CTX row:
+  CTX                   — context window label
+  ▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱      — 15-character progress bar (filled / empty)
+  20%                   — used percentage
+  20k/200k              — used tokens / total tokens
+
+──────────────────────────────────────────────────────────
+Example 2: High context usage + quota rows (authenticated)
+──────────────────────────────────────────────────────────
+
+📂 ~/dev/my-project  opus4.6 ⚡hi ↯fast  200k  🔀 feature/new-ui
+CTX ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱  95%  190k/200k
+5H  ▰▰▰▰▰▰▰▰▰▱▱▱▱▱▱  65%  ↻ 2h30m
+7D  ▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱  35%  ↻ 4d12h
+EX  ▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱  22%  $2.20/$10.00
+
+Additional fields shown when authenticated:
+  ↯fast                 — fast mode indicator (shown when fastMode is enabled)
+  5H row                — 5-hour rolling quota utilization + time until reset
+  7D row                — 7-day rolling quota utilization + time until reset
+  EX row                — extra usage credits (shown only when enabled on the account)
+
+Color coding:
+  Cyan   — context bar (normal)
+  Yellow — context bar (≥ 70% used)
+  Red    — context bar (≥ 90% used)
+  Green  — 5H quota (normal)
+  Yellow — 5H quota (≥ 50%)
+  Red    — 5H quota (≥ 80%)
+  Blue   — 7D quota (normal, < 50%)
+  Magenta— 7D quota (≥ 50%)
+  Red    — 7D quota (≥ 80%)
+
+──────────────────────────────────────────────────────────
+Quota rows (5H / 7D / EX)
+──────────────────────────────────────────────────────────
+
+Quota data is fetched from the Anthropic API using the OAuth token stored by
+Claude Code CLI in the macOS Keychain. If the token is unavailable (not
+authenticated or non-macOS), quota rows are simply omitted — the CTX row is
+always shown.
+
+The fetch runs in the background each time statusline.sh is called. Results are
+cached in /tmp/claude-usage-cache.json (60-second TTL) so there is no noticeable
+latency impact.
