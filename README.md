@@ -1,6 +1,10 @@
 # claude-code-statusline
 
+[![CI](https://github.com/jojo-dan/claude-code-statusline/actions/workflows/ci.yml/badge.svg)](https://github.com/jojo-dan/claude-code-statusline/actions/workflows/ci.yml)
+
 A terminal statusline for [Claude Code](https://claude.ai/code) that displays context window usage, active model, git branch, effort level, and (optionally) your Anthropic API quota — all in a compact, color-coded header.
+
+> **Demo screenshot coming soon.** See [`examples/demo-output.txt`](examples/demo-output.txt) for annotated output.
 
 ```
 📂 ~/dev/my-project  sonnet4.6 ⚡hi  200k  🔀 main
@@ -112,6 +116,20 @@ The `5H`, `7D`, and `EX` rows show your Anthropic API usage, fetched from the An
 2. Results are cached in `/tmp/claude-usage-cache.json` (60-second TTL)
 3. If the token is missing or the request fails, the script exits silently — quota rows are not shown, but the rest of the statusline works normally
 
+**Resources accessed:**
+
+| Resource | Access | Purpose |
+|----------|--------|---------|
+| `~/.claude/settings.json` | Read-only | `fastMode`, `effortLevel` fields |
+| `/tmp/claude-usage-cache.json` | Read + Write | Quota cache (60-second TTL) |
+| macOS Keychain (`security`) | Read-only | OAuth access token for Anthropic API |
+| `https://api.anthropic.com/api/oauth/usage` | Network (GET) | Quota data fetch |
+| `git rev-parse` | Local process | Current git branch name |
+
+**Performance:**
+- `statusline.sh` itself completes in tens of milliseconds — it reads cached data only, never blocks on network.
+- Network requests happen in a detached background process (`fetch-usage.sh`). When the 60-second cache is still valid, no network request is made. When the cache expires, one GET request is issued with a 5-second timeout (`curl --max-time 5`).
+
 ---
 
 ## Files
@@ -122,6 +140,104 @@ The `5H`, `7D`, and `EX` rows show your Anthropic API usage, fetched from the An
 | `fetch-usage.sh` | Background fetcher for Anthropic quota API |
 | `setup.sh` | Installer — creates wrapper and registers `statusLine` in settings.json |
 | `examples/demo-output.txt` | Annotated output examples |
+| `CHANGELOG.md` | Version history |
+
+---
+
+## Troubleshooting
+
+### `jq` not installed — blank output or error
+
+**Symptom:** The statusline shows nothing, or you see a `jq: command not found` error.
+
+**Cause:** `statusline.sh` depends on `jq` to parse the JSON input from Claude Code.
+
+**Fix:**
+```bash
+brew install jq
+```
+
+---
+
+### Quota rows not showing (no 5H / 7D / EX rows)
+
+**Symptom:** Only the `CTX` row appears; the `5H`, `7D`, and `EX` rows are missing.
+
+**Cause:**
+- Claude Code CLI is not authenticated, or
+- You are not on macOS (the quota feature requires the macOS Keychain)
+
+**Fix:**
+```bash
+# Re-authenticate Claude Code CLI
+claude login
+```
+
+If the rows still do not appear after authentication, verify that the token was saved correctly in the macOS Keychain:
+```bash
+security find-generic-password -s "claude.ai" -w 2>/dev/null | head -c 20
+```
+If there is no output, run `claude login` again.
+
+---
+
+### Statusline not showing after running `setup.sh`
+
+**Symptom:** You ran `bash setup.sh` but the statusline does not appear in Claude Code.
+
+**Fix:**
+1. Quit Claude Code completely and restart it.
+2. Verify that the `statusLine` key was registered correctly in `settings.json`:
+   ```bash
+   jq '.statusLine' ~/.claude/settings.json
+   ```
+   Expected output:
+   ```json
+   {
+     "type": "command",
+     "command": "/absolute/path/to/statusline.sh"
+   }
+   ```
+   If `null` is returned, run `bash setup.sh` again.
+
+---
+
+### Statusline stops working after moving the repo
+
+**Symptom:** The statusline disappears after you move the repo directory to a new location.
+
+**Cause:** The wrapper created by `setup.sh` contains a hardcoded absolute path.
+
+**Fix:** Re-run `setup.sh` from the new location:
+```bash
+bash /new/path/to/setup.sh
+```
+
+---
+
+## Contributing
+
+Contributions are welcome. Please follow the steps below.
+
+### Reporting issues
+
+Open an issue on [GitHub Issues](https://github.com/jojo-dan/claude-code-statusline/issues) and include:
+- Your macOS version and shell
+- Steps to reproduce the problem
+- The actual output vs. what you expected
+
+### Submitting a pull request
+
+1. Fork the repository on GitHub.
+2. Create a branch from `main`: `git checkout -b your-feature-name`
+3. Make your changes and commit them.
+4. Open a pull request against `main` with a clear description of the change.
+
+### Code style
+
+- Scripts are written in **bash**. Keep them POSIX-friendly where possible.
+- Run [ShellCheck](https://www.shellcheck.net/) on any `.sh` files you modify (`shellcheck statusline.sh`).
+- Avoid introducing external dependencies beyond `jq`, `curl`, and standard macOS utilities.
 
 ---
 
