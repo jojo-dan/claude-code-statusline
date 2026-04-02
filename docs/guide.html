@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Statusline — 설치 가이드</title>
+<style>
+  :root {
+    --bg: #1a1b26;
+    --surface: #24283b;
+    --border: #3b4261;
+    --text: #c0caf5;
+    --text-dim: #565f89;
+    --accent: #7aa2f7;
+    --green: #9ece6a;
+    --yellow: #e0af68;
+    --red: #f7768e;
+    --magenta: #bb9af7;
+    --cyan: #7dcfff;
+    --orange: #ff9e64;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+    background: var(--bg);
+    color: var(--text);
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+  .container { max-width: 820px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; color: var(--accent); }
+  .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 40px; }
+  h2 { font-size: 1.1rem; color: var(--accent); margin: 32px 0 16px 0; }
+
+  .flow { display: flex; flex-direction: column; position: relative; }
+  .flow::before {
+    content: ''; position: absolute; left: 23px; top: 48px; bottom: 48px;
+    width: 2px; background: var(--border);
+  }
+  .step { display: flex; gap: 20px; align-items: flex-start; position: relative; }
+  .step-number {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--surface); border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; color: var(--accent);
+    flex-shrink: 0; z-index: 1; transition: all 0.2s;
+  }
+  .step:hover .step-number { border-color: var(--accent); background: #1e2240; }
+  .step-content { flex: 1; padding: 12px 0 36px 0; }
+  .step-title { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+  .step-desc { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 10px; }
+  .step-tag {
+    display: inline-block; font-size: 0.7rem; padding: 2px 8px;
+    border-radius: 4px; font-weight: 600; margin-right: 6px;
+  }
+  .tag-required { background: rgba(122,162,247,0.15); color: var(--accent); }
+  .tag-optional { background: rgba(86,95,137,0.3); color: var(--text-dim); }
+  .tag-auto { background: rgba(158,206,106,0.15); color: var(--green); }
+
+  .code-block {
+    background: #1e1f2e; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; margin: 10px 0; font-size: 0.78rem; overflow-x: auto;
+  }
+  .code-block .comment { color: var(--text-dim); }
+  .code-block .cmd { color: var(--green); }
+  .code-block .str { color: var(--orange); }
+  .code-block .key { color: var(--magenta); }
+  .code-block .val { color: var(--cyan); }
+
+  .preview {
+    background: #16161e; border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 18px; margin: 12px 0; font-size: 0.8rem; line-height: 1.7;
+  }
+  .preview .folder { color: var(--yellow); }
+  .preview .model { color: var(--cyan); }
+  .preview .dim { color: var(--text-dim); }
+  .preview .ctx-label { font-weight: 700; color: var(--cyan); }
+  .preview .bar-fill { color: var(--cyan); }
+  .preview .bar-empty { color: var(--text-dim); opacity: 0.4; }
+  .preview .pct { color: var(--cyan); }
+  .preview .h5-label { font-weight: 700; color: var(--green); }
+  .preview .h5-fill { color: var(--green); }
+  .preview .h5-pct { color: var(--green); }
+  .preview .d7-label { font-weight: 700; color: var(--accent); }
+  .preview .d7-fill { color: var(--accent); }
+  .preview .d7-pct { color: var(--accent); }
+  .preview .phase { font-weight: 700; color: var(--green); }
+  .preview .branch { color: var(--magenta); opacity: 0.7; }
+  .preview .suffix { color: var(--text-dim); }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 8px 0 8px 68px; font-size: 0.72rem; color: var(--text-dim);
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .note {
+    background: rgba(224,175,104,0.08); border-left: 3px solid var(--yellow);
+    padding: 10px 14px; margin: 10px 0; font-size: 0.78rem; border-radius: 0 6px 6px 0;
+  }
+  .note strong { color: var(--yellow); }
+
+  .features {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;
+  }
+  .feature-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+  }
+  .feature-card h4 { font-size: 0.82rem; margin-bottom: 4px; }
+  .feature-card p { font-size: 0.72rem; color: var(--text-dim); }
+
+  .how-it-works {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; margin: 16px 0;
+  }
+  .how-it-works h3 { font-size: 0.9rem; color: var(--accent); margin-bottom: 12px; }
+  .how-arrow {
+    display: flex; align-items: center; gap: 12px; margin: 8px 0;
+    font-size: 0.78rem;
+  }
+  .how-box {
+    background: #1e1f2e; border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; flex: 1; text-align: center;
+  }
+  .how-box .label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 2px; }
+  .how-box .value { font-size: 0.78rem; font-weight: 600; }
+  .arrow { color: var(--text-dim); font-size: 1.2rem; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Claude Code Statusline</h1>
+<p class="subtitle">설치 가이드 &bull; 3단계로 완료</p>
+
+<!-- Features -->
+<div class="features">
+  <div class="feature-card">
+    <h4 style="color:var(--cyan);">CTX 컨텍스트 바</h4>
+    <p>컨텍스트 윈도우 사용률을 시각적으로 표시</p>
+  </div>
+  <div class="feature-card">
+    <h4 style="color:var(--green);">5H / 7D 쿼터</h4>
+    <p>토큰 사용량 + 리셋 타이머 (자동 감지)</p>
+  </div>
+  <div class="feature-card">
+    <h4 style="color:var(--magenta);">모델 + 브랜치</h4>
+    <p>현재 모델, effort, fast mode, git 브랜치</p>
+  </div>
+  <div class="feature-card">
+    <h4 style="color:var(--yellow);">반응형 레이아웃</h4>
+    <p>터미널 폭에 따라 L/M/S 자동 조절</p>
+  </div>
+</div>
+
+<!-- Install Flow -->
+<h2>설치</h2>
+<div class="flow">
+
+  <!-- Step 1 -->
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <div class="step-title">레포 clone</div>
+      <div class="step-desc">원하는 위치에 clone한다. 아래는 권장 경로.</div>
+      <span class="step-tag tag-required">필수</span>
+      <div class="code-block">
+<span class="cmd">git clone</span> https://github.com/jojo-dan/claude-code-statusline.git <span class="str">~/.claude/statusline</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <div class="step-title">settings.json 등록</div>
+      <div class="step-desc"><code style="color:var(--orange);">~/.claude/settings.json</code>에 statusLine command를 추가한다.</div>
+      <span class="step-tag tag-required">필수</span>
+      <div class="code-block">
+{
+  <span class="key">"statusLine"</span>: {
+    <span class="key">"command"</span>: <span class="str">"bash ~/.claude/statusline/scripts/statusline.sh"</span>
+  }
+}
+      </div>
+      <div class="note">
+        <strong>Note:</strong> Claude Code가 stdin으로 JSON을 전달하고, stdout을 statusline 영역에 표시한다.
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <div class="step-title">Claude Code 재시작 &mdash; 끝</div>
+      <div class="step-desc">Claude Code를 재시작하면 모든 기능이 즉시 동작한다.</div>
+      <span class="step-tag tag-required">필수</span>
+      <span class="step-tag tag-auto">자동 반영</span>
+
+      <div class="preview">
+        <span class="folder">&#x1F4C2; my-project</span>&nbsp;&nbsp;<span class="model">opus4.6</span>&nbsp;<span class="dim">&#x26A1;hi</span>&nbsp;<span class="dim">1000k</span><br>
+        <span class="ctx-label">CTX</span> <span class="bar-fill">&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="pct">12%</span>&nbsp;&nbsp;<span class="suffix">24k/200k</span><br>
+        <span class="h5-label">5H&nbsp;</span> <span class="h5-fill">&#x25B0;&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="h5-pct">16%</span>&nbsp;&nbsp;<span class="suffix">&#x21BB; 4h39m</span><br>
+        <span class="d7-label">7D&nbsp;</span> <span class="d7-fill">&#x25B0;&#x25B0;&#x25B0;&#x25B0;&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="d7-pct">39%</span>&nbsp;&nbsp;<span class="suffix">&#x21BB; 5d21h</span><br>
+        <span class="phase">done</span>&nbsp;&nbsp;<span class="branch">main</span>
+      </div>
+
+      <div class="step-desc" style="margin-top:8px;">
+        5H/7D 사용량은 Claude Code 로그인 시 OS에 저장된 토큰을 자동으로 읽어 동작한다. 추가 설정 불필요.
+      </div>
+
+      <div class="note">
+        <strong>Fallback:</strong> credential store 접근이 안 되는 환경에서는
+        <code style="color:var(--orange);">export CLAUDE_OAUTH_TOKEN="..."</code>을 셸 프로필에 추가.
+        토큰을 가져올 수 없으면 5H/7D 바만 미표시, 나머지는 정상 동작.
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">3단계로 설치 완료. 아래는 선택 커스터마이징.</div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <div class="step-title">커스터마이징 (선택)</div>
+      <div class="step-desc">settings.json의 statusline 객체로 개별 행을 토글할 수 있다.</div>
+      <span class="step-tag tag-optional">선택</span>
+      <div class="code-block">
+<span class="comment">// ~/.claude/settings.json</span>
+{
+  <span class="key">"statusline"</span>: {
+    <span class="key">"ctx"</span>: <span class="val">true</span>,       <span class="comment">// CTX 바</span>
+    <span class="key">"5h"</span>: <span class="val">true</span>,        <span class="comment">// 5H 사용량 바</span>
+    <span class="key">"7d"</span>: <span class="val">false</span>,       <span class="comment">// 7D 사용량 바 (끄기)</span>
+    <span class="key">"branch"</span>: <span class="val">true</span>     <span class="comment">// 브랜치 + phase 행</span>
+  }
+}
+      </div>
+      <div class="note">
+        <strong>세션 단위 비활성화:</strong> <code style="color:var(--orange);">CLAUDE_STATUSLINE_OFF=1</code>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- How it works -->
+<h2>동작 원리</h2>
+<div class="how-it-works">
+  <h3>데이터 흐름</h3>
+  <div class="how-arrow">
+    <div class="how-box">
+      <div class="label">Claude Code</div>
+      <div class="value" style="color:var(--accent);">stdin JSON</div>
+    </div>
+    <span class="arrow">&rarr;</span>
+    <div class="how-box">
+      <div class="label">statusline.sh</div>
+      <div class="value" style="color:var(--green);">파싱 + 출력</div>
+    </div>
+    <span class="arrow">&rarr;</span>
+    <div class="how-box">
+      <div class="label">터미널</div>
+      <div class="value" style="color:var(--yellow);">statusline 표시</div>
+    </div>
+  </div>
+  <div class="how-arrow" style="margin-top:16px;">
+    <div class="how-box">
+      <div class="label">OS Credential Store</div>
+      <div class="value" style="color:var(--magenta);">OAuth 토큰</div>
+    </div>
+    <span class="arrow">&rarr;</span>
+    <div class="how-box">
+      <div class="label">fetch-usage.sh</div>
+      <div class="value" style="color:var(--cyan);">API 호출 (백그라운드)</div>
+    </div>
+    <span class="arrow">&rarr;</span>
+    <div class="how-box">
+      <div class="label">캐시 파일</div>
+      <div class="value" style="color:var(--orange);">5H / 7D 데이터</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
