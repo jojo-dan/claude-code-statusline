@@ -1,6 +1,6 @@
 # Claude Code Statusline
 
-![statusline](https://github.com/user-attachments/assets/placeholder-screenshot.png)
+![statusline](docs/screenshot.png)
 
 Claude Code 터미널 하단에 컨텍스트 사용률, 5시간/7일 토큰 쿼터, 모델, 브랜치를 실시간으로 표시합니다.
 
