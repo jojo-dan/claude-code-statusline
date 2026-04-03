@@ -80,6 +80,10 @@ Add a `statusline` object to `~/.claude/settings.json`. Omitted keys default to 
 - macOS: `security` (pre-installed)
 - Linux: `secret-tool` (optional — falls back to `CLAUDE_OAUTH_TOKEN` env var)
 
+## Visual guide
+
+For an interactive walkthrough with live previews, open the [setup guide](https://jojo-dan.github.io/claude-code-statusline/guide.html).
+
 ## License
 
 MIT
