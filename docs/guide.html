@@ -18,33 +18,27 @@
     --magenta: #bb9af7;
     --cyan: #7dcfff;
     --orange: #ff9e64;
-    --code-bg: #1e1f2e;
-    --terminal-bg: #16161e;
-    --step-hover: #1e2240;
-  }
-
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --bg: #f0f0f4;
-      --surface: #e8e8ee;
-      --border: #c8c8d0;
-      --text: #343b58;
-      --text-dim: #8990b3;
-      --code-bg: #e0e0e8;
-      --terminal-bg: #dcdce4;
-      --step-hover: #d8d8e2;
-    }
+    --code-bg: #24283b;
+    --terminal-bg: #1a1b26;
+    --step-hover: #292e42;
   }
 
   :root[data-theme="light"] {
-    --bg: #f0f0f4;
-    --surface: #e8e8ee;
-    --border: #c8c8d0;
+    --bg: #d5d6db;
+    --surface: #c8c9d0;
+    --border: #9a9ba8;
     --text: #343b58;
-    --text-dim: #8990b3;
-    --code-bg: #e0e0e8;
-    --terminal-bg: #dcdce4;
-    --step-hover: #d8d8e2;
+    --text-dim: #5a6082;
+    --accent: #2e6fd9;
+    --green: #4d7c0f;
+    --yellow: #a16207;
+    --red: #e11d48;
+    --magenta: #7c3aed;
+    --cyan: #0882a0;
+    --orange: #c2410c;
+    --code-bg: #c8c9d0;
+    --terminal-bg: #d5d6db;
+    --step-hover: #bfc0c9;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -363,38 +357,27 @@
 
 <script>
 (function() {
-  const toggle = document.getElementById('themeToggle');
-  const root = document.documentElement;
-  const stored = localStorage.getItem('theme');
+  var toggle = document.getElementById('themeToggle');
+  var root = document.documentElement;
+  var stored = localStorage.getItem('theme');
 
-  if (stored) {
-    root.setAttribute('data-theme', stored);
-  }
+  if (stored === 'light') root.setAttribute('data-theme', 'light');
 
   function updateIcon() {
-    const isDark = root.getAttribute('data-theme') !== 'light' &&
-      !(window.matchMedia('(prefers-color-scheme: light)').matches && !root.getAttribute('data-theme'));
-    toggle.textContent = isDark ? '\u263E' : '\u2600';
+    toggle.textContent = root.getAttribute('data-theme') === 'light' ? '\u2600' : '\u263E';
   }
 
   updateIcon();
 
   toggle.addEventListener('click', function() {
-    const current = root.getAttribute('data-theme');
-    const systemLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-
-    if (current === 'dark' || (!current && !systemLight)) {
+    if (root.getAttribute('data-theme') === 'light') {
+      root.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'dark');
+    } else {
       root.setAttribute('data-theme', 'light');
       localStorage.setItem('theme', 'light');
-    } else {
-      root.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
     }
     updateIcon();
-  });
-
-  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function() {
-    if (!localStorage.getItem('theme')) updateIcon();
   });
 })();
 </script>
