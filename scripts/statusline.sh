@@ -4,7 +4,7 @@
 # Claude Code statusline — context window, quota bars, model info, git branch & phase
 # https://github.com/jojo-dan/claude-code-statusline
 
-# --- settings.json 읽기 ---
+# --- Read settings.json ---
 read -r FAST_MODE EFFORT_LEVEL SL_CTX SL_5H SL_7D SL_BRANCH <<< "$(jq -r '[
   (.fastMode // false),
   (.effortLevel // "high"),
@@ -22,7 +22,7 @@ SESSION_ROOT=$(echo "$input" | jq -r '.workspace.project_dir // empty')
 [ -z "$SESSION_ROOT" ] && SESSION_ROOT=$(echo "$input" | jq -r '.workspace.current_dir // empty')
 [ -z "$SESSION_ROOT" ] && SESSION_ROOT="$PWD"
 
-# --- 프로젝트명 추출 (범용) ---
+# --- Extract project name ---
 PROJECT_NAME=$(basename "$(git -C "$SESSION_ROOT" rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
 [ -z "$PROJECT_NAME" ] && PROJECT_NAME=$(basename "$SESSION_ROOT")
 
@@ -121,7 +121,7 @@ if [ -f "$CACHE" ]; then
   R7=$(time_remaining "$RESET_7D")
 fi
 
-# --- Line 1: 프로젝트 + 모델 + effort + ctx_size ---
+# --- Line 1: project + model + effort + ctx_size ---
 CWD="${SESSION_ROOT/#$HOME/\~}"
 MODEL_ID=$(echo "$input" | jq -r '.model.id // empty')
 
