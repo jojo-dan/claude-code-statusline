@@ -1,14 +1,14 @@
 # Claude Code Statusline
 
-Claude Code 터미널 하단에 컨텍스트 사용률, 토큰 쿼터, 모델, 브랜치를 표시하는 statusline 플러그인.
+A statusline plugin that displays context window usage, token quotas, model info, and git branch at the bottom of the Claude Code terminal.
 
-## 빠른 설치
+## Quick Install
 
 ```bash
 git clone https://github.com/jojo-dan/claude-code-statusline.git ~/.claude/statusline
 ```
 
-`~/.claude/settings.json`에 추가:
+Add to `~/.claude/settings.json`:
 
 ```json
 {
@@ -18,20 +18,20 @@ git clone https://github.com/jojo-dan/claude-code-statusline.git ~/.claude/statu
 }
 ```
 
-Claude Code를 재시작하면 즉시 동작한다.
+Restart Claude Code and it works immediately.
 
-## 설정
+## Configuration
 
-### 행 토글
+### Row toggles
 
-`~/.claude/settings.json`의 `statusline` 객체로 개별 행을 켜고 끌 수 있다. 미설정 키는 기본 `true`.
+Individual rows can be toggled via the `statusline` object in `~/.claude/settings.json`. Omitted keys default to `true`.
 
-| 키 | 항목 | 기본값 |
-|----|------|--------|
-| `statusline.ctx` | CTX 컨텍스트 바 | `true` |
-| `statusline.5h` | 5H 사용량 바 | `true` |
-| `statusline.7d` | 7D 사용량 바 | `true` |
-| `statusline.branch` | 브랜치 + phase 행 | `true` |
+| Key | Row | Default |
+|-----|-----|---------|
+| `statusline.ctx` | CTX context bar | `true` |
+| `statusline.5h` | 5H usage bar | `true` |
+| `statusline.7d` | 7D usage bar | `true` |
+| `statusline.branch` | Branch + phase row | `true` |
 
 ```json
 {
@@ -42,20 +42,20 @@ Claude Code를 재시작하면 즉시 동작한다.
 }
 ```
 
-### 환경변수
+### Environment variables
 
-| 변수 | 설명 |
-|------|------|
-| `CLAUDE_STATUSLINE_OFF=1` | 세션 단위 statusline 비활성화 |
-| `CLAUDE_OAUTH_TOKEN` | OAuth 토큰 수동 지정 (credential store 접근 불가 시 폴백) |
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_STATUSLINE_OFF=1` | Disable statusline for the session |
+| `CLAUDE_OAUTH_TOKEN` | Manual OAuth token fallback (when credential store is unavailable) |
 
-## 동작 원리
+## How it works
 
 ### statusline.sh
 
-Claude Code가 stdin으로 전달하는 JSON을 파싱하여 출력한다.
+Parses the JSON that Claude Code pipes to stdin and renders the output.
 
-stdin JSON 구조:
+stdin JSON structure:
 ```json
 {
   "context_window": {
@@ -72,48 +72,48 @@ stdin JSON 구조:
 }
 ```
 
-추가로 `~/.claude/settings.json`에서 `fastMode`, `effortLevel`을 읽는다.
+Also reads `fastMode` and `effortLevel` from `~/.claude/settings.json`.
 
 ### fetch-usage.sh
 
-Claude Code 로그인 시 OS credential store에 저장된 OAuth 토큰을 자동으로 읽어 사용량 API를 호출한다.
+Reads the OAuth token stored in the OS credential store on Claude Code login and calls the usage API.
 
-토큰 획득 순서:
+Token retrieval order:
 1. macOS Keychain (`security find-generic-password`)
 2. Linux libsecret (`secret-tool lookup`)
-3. `$CLAUDE_OAUTH_TOKEN` 환경변수
+3. `$CLAUDE_OAUTH_TOKEN` environment variable
 
-캐시: `/tmp/claude-usage-cache.json`, TTL 120초. 백그라운드 실행으로 statusline 출력을 차단하지 않는다.
+Cache: `/tmp/claude-usage-cache.json`, TTL 120s. Runs in the background so it never blocks the statusline output.
 
-### 프로젝트명 추출
+### Project name
 
-`workspace.project_dir` → git repo root의 basename을 프로젝트명으로 사용한다. git repo가 아니면 디렉토리명을 사용.
+Uses `workspace.project_dir` → git repo root basename as the project name. Falls back to the directory name if not a git repo.
 
-### phase 표시
+### Phase display
 
-프로젝트 루트의 `.phase` 파일(JSON)에서 `"phase"` 값을 읽어 브랜치 옆에 표시한다. 파일이 없으면 브랜치만 표시.
+Reads the `"phase"` value from a `.phase` JSON file at the project root and displays it next to the branch. If no file exists, only the branch is shown.
 
-## 문제 해결
+## Troubleshooting
 
-| 증상 | 원인 | 해결 |
-|------|------|------|
-| statusline이 아예 안 보임 | `settings.json`의 `statusLine.command` 경로 오류 | 경로 확인. `bash -n ~/.claude/statusline/scripts/statusline.sh`로 구문 검증 |
-| 5H/7D 바가 안 보임 | credential store에서 토큰을 못 읽음 | `CLAUDE_OAUTH_TOKEN` 환경변수 설정, 또는 Claude Code 재로그인 |
-| 5H/7D에 `⚠ stale` 표시 | 캐시의 reset 시각이 과거 | 자동 갱신 대기 (최대 120초). API rate limit 중일 수 있음 |
-| 프로젝트명이 전체 경로로 표시됨 | git repo 밖에서 실행 중 | 정상 동작. git repo 안에서는 repo 이름이 표시됨 |
-| `date` 관련 에러 | GNU/BSD date 호환 이슈 | `bash`, `jq`, `python3`이 설치되어 있는지 확인 |
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Statusline doesn't appear | Wrong path in `settings.json` `statusLine.command` | Check the path. Validate with `bash -n ~/.claude/statusline/scripts/statusline.sh` |
+| 5H/7D bars missing | Can't read token from credential store | Set `CLAUDE_OAUTH_TOKEN` env var, or re-login to Claude Code |
+| 5H/7D shows `⚠ stale` | Cached reset time is in the past | Wait for auto-refresh (up to 120s). May be API rate-limited |
+| Project name shows full path | Running outside a git repo | Normal behavior. Inside a git repo, the repo name is shown |
+| `date` errors | GNU/BSD date compatibility | Ensure `bash`, `jq`, `python3` are installed |
 
-## 파일 구조
+## File structure
 
-| 파일 | 역할 |
-|------|------|
-| `scripts/statusline.sh` | 메인 statusline 출력 스크립트 |
-| `scripts/fetch-usage.sh` | OAuth API로 사용량 조회 + 캐시 |
-| `.claude-plugin/plugin.json` | 플러그인 메타데이터 |
-| `docs/guide.html` | 시각적 설치/사용 가이드 (브라우저에서 열기) |
+| File | Purpose |
+|------|---------|
+| `scripts/statusline.sh` | Main statusline render script |
+| `scripts/fetch-usage.sh` | OAuth API usage fetch + cache |
+| `.claude-plugin/plugin.json` | Plugin metadata |
+| `docs/guide.html` | Visual setup/usage guide (open in browser) |
 
-## 의존성
+## Dependencies
 
 - `bash`, `jq`, `python3`, `curl`, `git`
-- macOS: `security` (기본 설치됨)
-- Linux: `secret-tool` (선택 — 없으면 `CLAUDE_OAUTH_TOKEN` 환경변수 사용)
+- macOS: `security` (pre-installed)
+- Linux: `secret-tool` (optional — falls back to `CLAUDE_OAUTH_TOKEN` env var)
