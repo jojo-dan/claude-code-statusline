@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Code Statusline — 설치 가이드</title>
+<title>Claude Code Statusline — Setup Guide</title>
 <style>
   :root {
     --bg: #1a1b26;
@@ -18,7 +18,35 @@
     --magenta: #bb9af7;
     --cyan: #7dcfff;
     --orange: #ff9e64;
+    --code-bg: #1e1f2e;
+    --terminal-bg: #16161e;
+    --step-hover: #1e2240;
   }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f0f0f4;
+      --surface: #e8e8ee;
+      --border: #c8c8d0;
+      --text: #343b58;
+      --text-dim: #8990b3;
+      --code-bg: #e0e0e8;
+      --terminal-bg: #dcdce4;
+      --step-hover: #d8d8e2;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f0f0f4;
+    --surface: #e8e8ee;
+    --border: #c8c8d0;
+    --text: #343b58;
+    --text-dim: #8990b3;
+    --code-bg: #e0e0e8;
+    --terminal-bg: #dcdce4;
+    --step-hover: #d8d8e2;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
@@ -26,11 +54,27 @@
     color: var(--text);
     padding: 40px 20px;
     line-height: 1.6;
+    transition: background 0.3s, color 0.3s;
   }
   .container { max-width: 820px; margin: 0 auto; }
-  h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; color: var(--accent); }
+
+  .header { display: flex; align-items: center; justify-content: space-between; }
+  h1 { font-size: 1.4rem; font-weight: 600; color: var(--accent); }
   .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 40px; }
   h2 { font-size: 1.1rem; color: var(--accent); margin: 32px 0 16px 0; }
+
+  .theme-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    transition: border-color 0.2s;
+    color: var(--text);
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
 
   .flow { display: flex; flex-direction: column; position: relative; }
   .flow::before {
@@ -45,7 +89,7 @@
     font-weight: 700; font-size: 0.9rem; color: var(--accent);
     flex-shrink: 0; z-index: 1; transition: all 0.2s;
   }
-  .step:hover .step-number { border-color: var(--accent); background: #1e2240; }
+  .step:hover .step-number { border-color: var(--accent); background: var(--step-hover); }
   .step-content { flex: 1; padding: 12px 0 36px 0; }
   .step-title { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
   .step-desc { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 10px; }
@@ -58,7 +102,7 @@
   .tag-auto { background: rgba(158,206,106,0.15); color: var(--green); }
 
   .code-block {
-    background: #1e1f2e; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
     padding: 14px 16px; margin: 10px 0; font-size: 0.78rem; overflow-x: auto;
   }
   .code-block .comment { color: var(--text-dim); }
@@ -67,26 +111,43 @@
   .code-block .key { color: var(--magenta); }
   .code-block .val { color: var(--cyan); }
 
-  .preview {
-    background: #16161e; border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px 18px; margin: 12px 0; font-size: 0.8rem; line-height: 1.7;
+  /* Terminal window (matches SVG mockups) */
+  .terminal-window {
+    border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; margin: 12px 0;
+    background: var(--terminal-bg);
   }
-  .preview .folder { color: var(--yellow); }
-  .preview .model { color: var(--cyan); }
-  .preview .dim { color: var(--text-dim); }
-  .preview .ctx-label { font-weight: 700; color: var(--cyan); }
-  .preview .bar-fill { color: var(--cyan); }
-  .preview .bar-empty { color: var(--text-dim); opacity: 0.4; }
-  .preview .pct { color: var(--cyan); }
-  .preview .h5-label { font-weight: 700; color: var(--green); }
-  .preview .h5-fill { color: var(--green); }
-  .preview .h5-pct { color: var(--green); }
-  .preview .d7-label { font-weight: 700; color: var(--accent); }
-  .preview .d7-fill { color: var(--accent); }
-  .preview .d7-pct { color: var(--accent); }
-  .preview .phase { font-weight: 700; color: var(--green); }
-  .preview .branch { color: var(--magenta); opacity: 0.7; }
-  .preview .suffix { color: var(--text-dim); }
+  .terminal-titlebar {
+    background: var(--surface);
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .terminal-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .terminal-dot.red { background: #f7768e; }
+  .terminal-dot.yellow { background: #e0af68; }
+  .terminal-dot.green { background: #9ece6a; }
+  .terminal-body {
+    padding: 14px 18px; font-size: 0.8rem; line-height: 1.7;
+  }
+  .terminal-body .folder { color: var(--yellow); }
+  .terminal-body .model { color: var(--cyan); }
+  .terminal-body .dim { color: var(--text-dim); }
+  .terminal-body .ctx-label { font-weight: 700; color: var(--cyan); }
+  .terminal-body .bar-fill { color: var(--cyan); }
+  .terminal-body .bar-empty { color: var(--text-dim); opacity: 0.4; }
+  .terminal-body .pct { color: var(--cyan); }
+  .terminal-body .h5-label { font-weight: 700; color: var(--green); }
+  .terminal-body .h5-fill { color: var(--green); }
+  .terminal-body .h5-pct { color: var(--green); }
+  .terminal-body .d7-label { font-weight: 700; color: var(--accent); }
+  .terminal-body .d7-fill { color: var(--accent); }
+  .terminal-body .d7-pct { color: var(--accent); }
+  .terminal-body .phase { font-weight: 700; color: var(--green); }
+  .terminal-body .branch { color: var(--magenta); opacity: 0.7; }
+  .terminal-body .suffix { color: var(--text-dim); }
 
   .divider {
     display: flex; align-items: center; gap: 12px;
@@ -122,7 +183,7 @@
     font-size: 0.78rem;
   }
   .how-box {
-    background: #1e1f2e; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
     padding: 8px 12px; flex: 1; text-align: center;
   }
   .how-box .label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 2px; }
@@ -133,40 +194,43 @@
 <body>
 <div class="container">
 
-<h1>Claude Code Statusline</h1>
-<p class="subtitle">설치 가이드 &bull; 3단계로 완료</p>
+<div class="header">
+  <h1>Claude Code Statusline</h1>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">&#9790;</button>
+</div>
+<p class="subtitle">Setup Guide &bull; 3 steps to go</p>
 
 <!-- Features -->
 <div class="features">
   <div class="feature-card">
-    <h4 style="color:var(--cyan);">CTX 컨텍스트 바</h4>
-    <p>컨텍스트 윈도우 사용률을 시각적으로 표시</p>
+    <h4 style="color:var(--cyan);">CTX Context Bar</h4>
+    <p>Visual context window utilization meter</p>
   </div>
   <div class="feature-card">
-    <h4 style="color:var(--green);">5H / 7D 쿼터</h4>
-    <p>토큰 사용량 + 리셋 타이머 (자동 감지)</p>
+    <h4 style="color:var(--green);">5H / 7D Quota</h4>
+    <p>Token usage + reset timer (auto-detected)</p>
   </div>
   <div class="feature-card">
-    <h4 style="color:var(--magenta);">모델 + 브랜치</h4>
-    <p>현재 모델, effort, fast mode, git 브랜치</p>
+    <h4 style="color:var(--magenta);">Model + Branch</h4>
+    <p>Current model, effort, fast mode, git branch</p>
   </div>
   <div class="feature-card">
-    <h4 style="color:var(--yellow);">반응형 레이아웃</h4>
-    <p>터미널 폭에 따라 L/M/S 자동 조절</p>
+    <h4 style="color:var(--yellow);">Responsive Layout</h4>
+    <p>Auto-adjusts to L / M / S based on terminal width</p>
   </div>
 </div>
 
 <!-- Install Flow -->
-<h2>설치</h2>
+<h2>Installation</h2>
 <div class="flow">
 
   <!-- Step 1 -->
   <div class="step">
     <div class="step-number">1</div>
     <div class="step-content">
-      <div class="step-title">레포 clone</div>
-      <div class="step-desc">원하는 위치에 clone한다. 아래는 권장 경로.</div>
-      <span class="step-tag tag-required">필수</span>
+      <div class="step-title">Clone the repo</div>
+      <div class="step-desc">Clone to any location. Below is the recommended path.</div>
+      <span class="step-tag tag-required">Required</span>
       <div class="code-block">
 <span class="cmd">git clone</span> https://github.com/jojo-dan/claude-code-statusline.git <span class="str">~/.claude/statusline</span>
       </div>
@@ -177,9 +241,9 @@
   <div class="step">
     <div class="step-number">2</div>
     <div class="step-content">
-      <div class="step-title">settings.json 등록</div>
-      <div class="step-desc"><code style="color:var(--orange);">~/.claude/settings.json</code>에 statusLine command를 추가한다.</div>
-      <span class="step-tag tag-required">필수</span>
+      <div class="step-title">Register in settings.json</div>
+      <div class="step-desc">Add the statusLine command to <code style="color:var(--orange);">~/.claude/settings.json</code>.</div>
+      <span class="step-tag tag-required">Required</span>
       <div class="code-block">
 {
   <span class="key">"statusLine"</span>: {
@@ -188,7 +252,7 @@
 }
       </div>
       <div class="note">
-        <strong>Note:</strong> Claude Code가 stdin으로 JSON을 전달하고, stdout을 statusline 영역에 표시한다.
+        <strong>Note:</strong> Claude Code pipes JSON via stdin, and displays stdout in the statusline area.
       </div>
     </div>
   </div>
@@ -197,53 +261,60 @@
   <div class="step">
     <div class="step-number">3</div>
     <div class="step-content">
-      <div class="step-title">Claude Code 재시작 &mdash; 끝</div>
-      <div class="step-desc">Claude Code를 재시작하면 모든 기능이 즉시 동작한다.</div>
-      <span class="step-tag tag-required">필수</span>
-      <span class="step-tag tag-auto">자동 반영</span>
+      <div class="step-title">Restart Claude Code &mdash; done</div>
+      <div class="step-desc">Restart Claude Code and everything works immediately.</div>
+      <span class="step-tag tag-required">Required</span>
+      <span class="step-tag tag-auto">Auto-applied</span>
 
-      <div class="preview">
-        <span class="folder">&#x1F4C2; my-project</span>&nbsp;&nbsp;<span class="model">opus4.6</span>&nbsp;<span class="dim">&#x26A1;hi</span>&nbsp;<span class="dim">1000k</span><br>
-        <span class="ctx-label">CTX</span> <span class="bar-fill">&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="pct">12%</span>&nbsp;&nbsp;<span class="suffix">24k/200k</span><br>
-        <span class="h5-label">5H&nbsp;</span> <span class="h5-fill">&#x25B0;&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="h5-pct">16%</span>&nbsp;&nbsp;<span class="suffix">&#x21BB; 4h39m</span><br>
-        <span class="d7-label">7D&nbsp;</span> <span class="d7-fill">&#x25B0;&#x25B0;&#x25B0;&#x25B0;&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="d7-pct">39%</span>&nbsp;&nbsp;<span class="suffix">&#x21BB; 5d21h</span><br>
-        <span class="phase">done</span>&nbsp;&nbsp;<span class="branch">main</span>
+      <div class="terminal-window">
+        <div class="terminal-titlebar">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+        </div>
+        <div class="terminal-body">
+          <span class="folder">&#x1F4C2; my-project</span>&nbsp;&nbsp;<span class="model">opus4.6</span>&nbsp;<span class="dim">&#x26A1;hi</span>&nbsp;<span class="dim">1000k</span><br>
+          <span class="ctx-label">CTX</span> <span class="bar-fill">&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="pct">12%</span>&nbsp;&nbsp;<span class="suffix">24k/200k</span><br>
+          <span class="h5-label">5H&nbsp;</span> <span class="h5-fill">&#x25B0;&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="h5-pct">16%</span>&nbsp;&nbsp;<span class="suffix">&#x21BB; 4h39m</span><br>
+          <span class="d7-label">7D&nbsp;</span> <span class="d7-fill">&#x25B0;&#x25B0;&#x25B0;&#x25B0;&#x25B0;&#x25B0;</span><span class="bar-empty">&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;&#x25B1;</span>&nbsp;&nbsp;<span class="d7-pct">39%</span>&nbsp;&nbsp;<span class="suffix">&#x21BB; 5d21h</span><br>
+          <span class="phase">done</span>&nbsp;&nbsp;<span class="branch">main</span>
+        </div>
       </div>
 
       <div class="step-desc" style="margin-top:8px;">
-        5H/7D 사용량은 Claude Code 로그인 시 OS에 저장된 토큰을 자동으로 읽어 동작한다. 추가 설정 불필요.
+        5H/7D usage reads tokens stored by your OS when you log in to Claude Code. No extra setup needed.
       </div>
 
       <div class="note">
-        <strong>Fallback:</strong> credential store 접근이 안 되는 환경에서는
-        <code style="color:var(--orange);">export CLAUDE_OAUTH_TOKEN="..."</code>을 셸 프로필에 추가.
-        토큰을 가져올 수 없으면 5H/7D 바만 미표시, 나머지는 정상 동작.
+        <strong>Fallback:</strong> If credential store access is unavailable, add
+        <code style="color:var(--orange);">export CLAUDE_OAUTH_TOKEN="..."</code> to your shell profile.
+        When the token can't be retrieved, only the 5H/7D bars are hidden &mdash; everything else works normally.
       </div>
     </div>
   </div>
 
-  <div class="divider">3단계로 설치 완료. 아래는 선택 커스터마이징.</div>
+  <div class="divider">Installation complete. Optional customization below.</div>
 
   <!-- Step 4 -->
   <div class="step">
     <div class="step-number">4</div>
     <div class="step-content">
-      <div class="step-title">커스터마이징 (선택)</div>
-      <div class="step-desc">settings.json의 statusline 객체로 개별 행을 토글할 수 있다.</div>
-      <span class="step-tag tag-optional">선택</span>
+      <div class="step-title">Customization (optional)</div>
+      <div class="step-desc">Toggle individual rows via the statusline object in settings.json.</div>
+      <span class="step-tag tag-optional">Optional</span>
       <div class="code-block">
 <span class="comment">// ~/.claude/settings.json</span>
 {
   <span class="key">"statusline"</span>: {
-    <span class="key">"ctx"</span>: <span class="val">true</span>,       <span class="comment">// CTX 바</span>
-    <span class="key">"5h"</span>: <span class="val">true</span>,        <span class="comment">// 5H 사용량 바</span>
-    <span class="key">"7d"</span>: <span class="val">false</span>,       <span class="comment">// 7D 사용량 바 (끄기)</span>
-    <span class="key">"branch"</span>: <span class="val">true</span>     <span class="comment">// 브랜치 + phase 행</span>
+    <span class="key">"ctx"</span>: <span class="val">true</span>,       <span class="comment">// CTX bar</span>
+    <span class="key">"5h"</span>: <span class="val">true</span>,        <span class="comment">// 5H usage bar</span>
+    <span class="key">"7d"</span>: <span class="val">false</span>,       <span class="comment">// 7D usage bar (off)</span>
+    <span class="key">"branch"</span>: <span class="val">true</span>     <span class="comment">// branch + phase row</span>
   }
 }
       </div>
       <div class="note">
-        <strong>세션 단위 비활성화:</strong> <code style="color:var(--orange);">CLAUDE_STATUSLINE_OFF=1</code>
+        <strong>Per-session disable:</strong> <code style="color:var(--orange);">CLAUDE_STATUSLINE_OFF=1</code>
       </div>
     </div>
   </div>
@@ -251,9 +322,9 @@
 </div>
 
 <!-- How it works -->
-<h2>동작 원리</h2>
+<h2>How it works</h2>
 <div class="how-it-works">
-  <h3>데이터 흐름</h3>
+  <h3>Data Flow</h3>
   <div class="how-arrow">
     <div class="how-box">
       <div class="label">Claude Code</div>
@@ -262,32 +333,70 @@
     <span class="arrow">&rarr;</span>
     <div class="how-box">
       <div class="label">statusline.sh</div>
-      <div class="value" style="color:var(--green);">파싱 + 출력</div>
+      <div class="value" style="color:var(--green);">Parse + Render</div>
     </div>
     <span class="arrow">&rarr;</span>
     <div class="how-box">
-      <div class="label">터미널</div>
-      <div class="value" style="color:var(--yellow);">statusline 표시</div>
+      <div class="label">Terminal</div>
+      <div class="value" style="color:var(--yellow);">Statusline Display</div>
     </div>
   </div>
   <div class="how-arrow" style="margin-top:16px;">
     <div class="how-box">
       <div class="label">OS Credential Store</div>
-      <div class="value" style="color:var(--magenta);">OAuth 토큰</div>
+      <div class="value" style="color:var(--magenta);">OAuth Token</div>
     </div>
     <span class="arrow">&rarr;</span>
     <div class="how-box">
       <div class="label">fetch-usage.sh</div>
-      <div class="value" style="color:var(--cyan);">API 호출 (백그라운드)</div>
+      <div class="value" style="color:var(--cyan);">API Call (background)</div>
     </div>
     <span class="arrow">&rarr;</span>
     <div class="how-box">
-      <div class="label">캐시 파일</div>
-      <div class="value" style="color:var(--orange);">5H / 7D 데이터</div>
+      <div class="label">Cache File</div>
+      <div class="value" style="color:var(--orange);">5H / 7D Data</div>
     </div>
   </div>
 </div>
 
 </div>
+
+<script>
+(function() {
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  const stored = localStorage.getItem('theme');
+
+  if (stored) {
+    root.setAttribute('data-theme', stored);
+  }
+
+  function updateIcon() {
+    const isDark = root.getAttribute('data-theme') !== 'light' &&
+      !(window.matchMedia('(prefers-color-scheme: light)').matches && !root.getAttribute('data-theme'));
+    toggle.textContent = isDark ? '\u263E' : '\u2600';
+  }
+
+  updateIcon();
+
+  toggle.addEventListener('click', function() {
+    const current = root.getAttribute('data-theme');
+    const systemLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+    if (current === 'dark' || (!current && !systemLight)) {
+      root.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      root.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    }
+    updateIcon();
+  });
+
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function() {
+    if (!localStorage.getItem('theme')) updateIcon();
+  });
+})();
+</script>
 </body>
 </html>
