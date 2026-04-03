@@ -5,14 +5,14 @@
 # https://github.com/jojo-dan/claude-code-statusline
 
 # --- settings.json 읽기 ---
-read -r FAST_MODE EFFORT_LEVEL SL_CTX SL_5H SL_7D SL_BRANCH <<< $(jq -r '[
+read -r FAST_MODE EFFORT_LEVEL SL_CTX SL_5H SL_7D SL_BRANCH <<< "$(jq -r '[
   (.fastMode // false),
   (.effortLevel // "high"),
   (if .statusline.ctx == null then true else .statusline.ctx end),
   (if .statusline["5h"] == null then true else .statusline["5h"] end),
   (if .statusline["7d"] == null then true else .statusline["7d"] end),
   (if .statusline.branch == null then true else .statusline.branch end)
-] | join(" ")' ~/.claude/settings.json 2>/dev/null || echo "false high true true true true")
+] | join(" ")' ~/.claude/settings.json 2>/dev/null || echo "false high true true true true")"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 input=$(cat)
@@ -86,8 +86,9 @@ is_stale() {
 
 chart_row() {
   local label="$1" pct="$2" color="$3" label_color="$4" suffix="$5"
-  local lbl=$(printf '%-3s' "$label")
-  local num=$(printf '%3s' "$pct")
+  local lbl num
+  lbl=$(printf '%-3s' "$label")
+  num=$(printf '%3s' "$pct")
   printf '%b' "${BOLD}${label_color}${lbl}${RST} "
   make_bar "$pct" "$color" "$BAR_W"
   printf '%b' " ${color}${num}%${RST}"
@@ -96,7 +97,7 @@ chart_row() {
 }
 
 # --- Git branch ---
-BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+BRANCH=$(git -C "$SESSION_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null)
 
 # --- Context color ---
 if [ "$PCT" -ge 90 ]; then CC="$RED"
@@ -121,7 +122,7 @@ if [ -f "$CACHE" ]; then
 fi
 
 # --- Line 1: 프로젝트 + 모델 + effort + ctx_size ---
-CWD=$(echo "$SESSION_ROOT" | sed "s|$HOME|~|")
+CWD="${SESSION_ROOT/#$HOME/\~}"
 MODEL_ID=$(echo "$input" | jq -r '.model.id // empty')
 
 MODEL_SHORT=""

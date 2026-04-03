@@ -1,6 +1,6 @@
 {
   "name": "statusline",
-  "description": "Claude Code statusline — 컨텍스트 윈도우, 사용량 바, 모델 정보, git 브랜치 & phase 표시. 반응형 레이아웃.",
+  "description": "Claude Code statusline — context window, quota bars, model info, git branch & phase. Responsive layout.",
   "version": "1.0.0",
   "author": {
     "name": "jojo-dan"
