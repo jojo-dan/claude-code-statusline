@@ -1,8 +1,16 @@
 # Claude Code Statusline
 
-![statusline](docs/screenshot.png)
-
 A terminal statusline for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that displays context window usage, 5-hour/7-day token quotas, model info, and git branch — all in real time.
+
+<p align="center">
+  <img src="docs/preview.svg" width="620" alt="statusline preview" />
+</p>
+
+Colors shift automatically when usage gets high:
+
+<p align="center">
+  <img src="docs/preview-warning.svg" width="620" alt="statusline high usage warning" />
+</p>
 
 ## Install
 
@@ -71,10 +79,6 @@ Add a `statusline` object to `~/.claude/settings.json`. Omitted keys default to 
 - `bash`, `jq`, `python3`, `curl`, `git`
 - macOS: `security` (pre-installed)
 - Linux: `secret-tool` (optional — falls back to `CLAUDE_OAUTH_TOKEN` env var)
-
-## Visual guide
-
-Open [`docs/guide.html`](docs/guide.html) in a browser for an interactive setup walkthrough with live previews.
 
 ## License
 
